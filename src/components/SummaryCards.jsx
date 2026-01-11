@@ -1,19 +1,28 @@
 import React from "react";
 
-function SummaryCards({ inventoryCount, deadStockCount, transferCount }) {
+function SummaryCards({ impactMetrics }) {
+  if (!impactMetrics) return null;
+
   return (
-    <div style={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
-      <div>
-        <h4>Total Inventory Records</h4>
-        <p>{inventoryCount}</p>
+    <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+      <div className="card">
+        <h4>Total Units</h4>
+        <h2>{impactMetrics.totalUnits}</h2>
       </div>
-      <div>
-        <h4>Dead Stock Identified</h4>
-        <p>{deadStockCount}</p>
+
+      <div className="card badge-red">
+        <h4>Dead Stock Units</h4>
+        <h2>{impactMetrics.deadStockUnits}</h2>
       </div>
-      <div>
-        <h4>Transfer Recommendations</h4>
-        <p>{transferCount}</p>
+
+      <div className="card badge-yellow">
+        <h4>Recoverable Units</h4>
+        <h2>{impactMetrics.recoverableUnits}</h2>
+      </div>
+
+      <div className="card badge-green">
+        <h4>Value at Risk</h4>
+        <h2>₹{impactMetrics.estimatedValueAtRisk.toLocaleString()}</h2>
       </div>
     </div>
   );

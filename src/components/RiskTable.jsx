@@ -3,6 +3,7 @@ import React from "react";
 function RiskTable({ deadStock }) {
   return (
     <>
+    <div className="card">
       <h3>🔴 Dead Stock Detected</h3>
       <table border="1" cellPadding="8" width="100%">
         <thead style={{ backgroundColor: "#f2f2f2" }}>
@@ -27,6 +28,7 @@ function RiskTable({ deadStock }) {
           ))}
         </tbody>
       </table>
+      </div>
     </>
   );
 }

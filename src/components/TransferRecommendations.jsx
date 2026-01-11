@@ -5,6 +5,7 @@ function TransferRecommendations({ transfers }) {
 
   return (
     <>
+    <div className="card">
       <h3>🔁 Transfer Recommendations</h3>
       <table border="1" cellPadding="8" width="100%">
         <thead style={{ backgroundColor: "#f2f2f2" }}>
@@ -29,6 +30,7 @@ function TransferRecommendations({ transfers }) {
           ))}
         </tbody>
       </table>
+      </div>
     </>
   );
 }

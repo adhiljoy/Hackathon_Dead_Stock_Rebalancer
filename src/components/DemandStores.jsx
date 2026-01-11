@@ -5,6 +5,7 @@ function DemandStores({ skuId, demandStores }) {
 
   return (
     <>
+    <div className="card">
       <h3>🟢 Demand Stores for {skuId}</h3>
       <table border="1" cellPadding="8" width="100%">
         <thead style={{ backgroundColor: "#f2f2f2" }}>
@@ -27,6 +28,7 @@ function DemandStores({ skuId, demandStores }) {
           ))}
         </tbody>
       </table>
+      </div>
     </>
   );
 }
