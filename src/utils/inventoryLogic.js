@@ -1,86 +1,74 @@
-// src/utils/inventoryLogic.js
+/**
+ * Identify dead stock based on:
+ * - Zero or very low sales
+ * - High stock age
+ * - High stock quantity
+ *
+ * IMPORTANT DEMO RULE:
+ * If sales data is missing for a SKU, we treat it as ZERO sales.
+ */
 
-import { calculateROS } from "./rosCalculator";
-
-// Identify Dead Stock Stores
 export function identifyDeadStock(inventory, salesHistory, rules) {
+  const {
+    min_stock_age_days = 60,
+    min_stock_units = 20,
+    max_sales_threshold = 1
+  } = rules.dead_stock_rules || {};
+
   return inventory.filter(item => {
-    const ros = calculateROS(
-      salesHistory,
-      item.store_id,
-      item.sku_id
+    // Get sales records for this SKU
+    const salesForSku = salesHistory.filter(
+      s => s.sku_id === item.sku_id
     );
 
+    // 👇 DEMO FIX:
+    // If no sales data exists, treat sales as ZERO
+    const totalSales = salesForSku.length
+      ? salesForSku.reduce(
+          (sum, s) => sum + (s.quantity || 0),
+          0
+        )
+      : 0;
+
     return (
-      ros <= rules.dead_stock_rules.ros_threshold &&
-      item.stock_age_days >= rules.dead_stock_rules.min_days_unsold &&
-      item.current_stock >= rules.dead_stock_rules.min_stock_quantity
+      totalSales <= max_sales_threshold &&
+      item.stock_age_days >= min_stock_age_days &&
+      item.current_stock >= min_stock_units
     );
   });
 }
 
-// Identify Demand Stores
-export function identifyDemandStores(
-  inventory,
-  salesHistory,
-  skuId,
-  rules
-) {
-  return inventory.filter(item => {
-    if (item.sku_id !== skuId) return false;
-
-    const ros = calculateROS(
-      salesHistory,
-      item.store_id,
-      item.sku_id
-    );
-
-    return (
-      ros >= rules.demand_store_rules.min_ros &&
-      item.stock_age_days <= rules.demand_store_rules.max_stock_age_days
-    );
-  });
-}
-
-// Recommend Transfers
+/**
+ * Recommend transfers from dead-stock stores to demand stores
+ * (simple heuristic for demo)
+ */
 export function recommendTransfers(
-  deadStockItems,
+  deadStock,
   inventory,
   salesHistory,
   rules
 ) {
   const recommendations = [];
 
-  deadStockItems.forEach(deadItem => {
-    const demandStores = identifyDemandStores(
-      inventory,
-      salesHistory,
-      deadItem.sku_id,
-      rules
+  deadStock.forEach(deadItem => {
+    // Find stores where same SKU is selling
+    const demandStores = salesHistory.filter(
+      s =>
+        s.sku_id === deadItem.sku_id &&
+        s.quantity > 2
     );
 
-    if (!demandStores.length) return;
-
-    const receiver = demandStores[0];
-
-    const maxTransferQty = Math.floor(
-      deadItem.current_stock *
-      (rules.transfer_constraints.max_transfer_percentage / 100)
-    );
-
-    const transferableQty = Math.max(
-      0,
-      maxTransferQty - rules.transfer_constraints.min_remaining_stock
-    );
-
-    if (transferableQty > 0) {
+    demandStores.forEach(store => {
       recommendations.push({
         sku_id: deadItem.sku_id,
         from_store: deadItem.store_id,
-        to_store: receiver.store_id,
-        quantity: transferableQty
+        to_store: store.store_id,
+        quantity: Math.min(
+          deadItem.current_stock,
+          10
+        )
       });
-    }
+    });
   });
 
   return recommendations;

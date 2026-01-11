@@ -24,7 +24,7 @@ function App() {
 
   const [selectedStore, setSelectedStore] = useState("");
   const [selectedSkuFilter, setSelectedSkuFilter] = useState("");
-  const [showDeadOnly, setShowDeadOnly] = useState(true);
+  const [showDeadOnly, setShowDeadOnly] = useState(false);
 
   // 🔁 CENTRAL INVENTORY FETCH FUNCTION
   const fetchInventory = useCallback(async () => {
