@@ -13,6 +13,7 @@ import RiskTable from "./components/RiskTable";
 import DemandStores from "./components/DemandStores";
 import TransferRecommendations from "./components/TransferRecommendations";
 import Filters from "./components/Filters";
+import TursoExample from "./components/TursoExample";
 
 function App() {
   const [salesHistory, setSalesHistory] = useState([]);
@@ -48,17 +49,17 @@ function App() {
 
   // Compute dead stock & transfers
   useEffect(() => {
-  if (inventory.length && salesHistory.length && rules.dead_stock_rules) {
-    const dead = identifyDeadStock(inventory, salesHistory, rules);
-    setDeadStock(dead);
+    if (inventory.length && salesHistory.length && rules.dead_stock_rules) {
+      const dead = identifyDeadStock(inventory, salesHistory, rules);
+      setDeadStock(dead);
 
-    const recs = recommendTransfers(dead, inventory, salesHistory, rules);
-    setTransfers(recs);
+      const recs = recommendTransfers(dead, inventory, salesHistory, rules);
+      setTransfers(recs);
 
-    const metrics = calculateImpactMetrics(inventory, dead, recs);
-    setImpactMetrics(metrics);
-  }
-}, [inventory, salesHistory, rules]);
+      const metrics = calculateImpactMetrics(inventory, dead, recs);
+      setImpactMetrics(metrics);
+    }
+  }, [inventory, salesHistory, rules]);
 
 
   // Apply filters
@@ -82,6 +83,8 @@ function App() {
   return (
     <div style={{ padding: "20px" }}>
       <h2>🧠 Smart Inventory Rebalancing Dashboard</h2>
+
+      <TursoExample />
 
       <SummaryCards impactMetrics={impactMetrics} />
 
