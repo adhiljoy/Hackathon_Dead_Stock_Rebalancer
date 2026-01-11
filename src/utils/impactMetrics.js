@@ -1,34 +1,28 @@
 // src/utils/impactMetrics.js
 
-export function calculateImpactMetrics(inventory, deadStock, transfers) {
+export function calculateImpactMetrics(
+  inventory,
+  deadStock,
+  transfers
+) {
   const totalUnits = inventory.reduce(
-    (sum, item) => sum + item.current_stock,
+    (sum, i) => sum + i.current_stock,
     0
   );
 
-  const deadStockUnits = deadStock.reduce(
-    (sum, item) => sum + item.current_stock,
+  const deadUnits = deadStock.reduce(
+    (sum, d) => sum + d.current_stock,
     0
   );
 
-  const recoverableUnits = transfers.reduce(
-    (sum, t) => sum + t.quantity,
-    0
-  );
+  const avgPrice = 1000; // demo value
 
-  const riskPercentage =
-    totalUnits > 0
-      ? ((deadStockUnits / totalUnits) * 100).toFixed(1)
-      : 0;
+  const revenueRecovered =
+    deadUnits * avgPrice * 0.4; // assume 40% recoverable
 
-  // Simple revenue estimate (can be replaced later)
-  const estimatedValueAtRisk = deadStockUnits * 500; // ₹500 per unit (assumption)
-
-  return {
+   return {
     totalUnits,
-    deadStockUnits,
-    recoverableUnits,
-    riskPercentage,
-    estimatedValueAtRisk
+    deadUnits,
+    revenueRecovered
   };
 }

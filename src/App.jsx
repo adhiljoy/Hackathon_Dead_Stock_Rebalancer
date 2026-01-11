@@ -1,10 +1,10 @@
+import { supabase } from "./utils/supabase";
 import { calculateImpactMetrics } from "./utils/impactMetrics";
 import DataUpload from "./components/DataUpload";
 import React, { useEffect, useState } from "react";
 
 import {
   identifyDeadStock,
-  identifyDemandStores,
   recommendTransfers
 } from "./utils/inventoryLogic";
 
@@ -13,7 +13,6 @@ import RiskTable from "./components/RiskTable";
 import DemandStores from "./components/DemandStores";
 import TransferRecommendations from "./components/TransferRecommendations";
 import Filters from "./components/Filters";
-import TursoExample from "./components/TursoExample";
 
 function App() {
   const [salesHistory, setSalesHistory] = useState([]);
@@ -21,33 +20,38 @@ function App() {
   const [rules, setRules] = useState({});
 
   const [deadStock, setDeadStock] = useState([]);
-  const [filteredDeadStock, setFilteredDeadStock] = useState([]);
   const [transfers, setTransfers] = useState([]);
   const [impactMetrics, setImpactMetrics] = useState(null);
-
-
-  const [selectedSku, setSelectedSku] = useState(null);
-  const [demandStores, setDemandStores] = useState([]);
 
   // Filters state
   const [selectedStore, setSelectedStore] = useState("");
   const [selectedSkuFilter, setSelectedSkuFilter] = useState("");
   const [showDeadOnly, setShowDeadOnly] = useState(true);
 
+  // 🔹 LOAD DATA
   useEffect(() => {
     async function loadData() {
+      const { data: inventoryData, error } = await supabase
+        .from("inventory")
+        .select("*");
+
+      if (error) {
+        console.error("Error fetching inventory:", error);
+        return;
+      }
+
       const sales = await fetch("/data/sales_history.json").then(r => r.json());
-      const inv = await fetch("/data/inventory_snapshot.json").then(r => r.json());
       const rls = await fetch("/data/transfer_rules.json").then(r => r.json());
 
+      setInventory(inventoryData);
       setSalesHistory(sales);
-      setInventory(inv);
       setRules(rls);
     }
+
     loadData();
   }, []);
 
-  // Compute dead stock & transfers
+  // 🔹 COMPUTE DEAD STOCK & IMPACT
   useEffect(() => {
     if (inventory.length && salesHistory.length && rules.dead_stock_rules) {
       const dead = identifyDeadStock(inventory, salesHistory, rules);
@@ -61,21 +65,16 @@ function App() {
     }
   }, [inventory, salesHistory, rules]);
 
-
-  // Apply filters
-  useEffect(() => {
-    let filtered = [...deadStock];
-
-    if (selectedStore) {
-      filtered = filtered.filter(item => item.store_id === selectedStore);
-    }
-
-    if (selectedSkuFilter) {
-      filtered = filtered.filter(item => item.sku_id === selectedSkuFilter);
-    }
-
-    setFilteredDeadStock(filtered);
-  }, [deadStock, selectedStore, selectedSkuFilter]);
+  // 🔹 APPLY FILTERS
+  const displayedInventory = showDeadOnly
+    ? inventory.filter(item =>
+        deadStock.some(
+          d =>
+            d.store_id === item.store_id &&
+            d.sku_id === item.sku_id
+        )
+      )
+    : inventory;
 
   const stores = [...new Set(inventory.map(i => i.store_id))];
   const skus = [...new Set(inventory.map(i => i.sku_id))];
@@ -83,8 +82,6 @@ function App() {
   return (
     <div style={{ padding: "20px" }}>
       <h2>🧠 Smart Inventory Rebalancing Dashboard</h2>
-
-      <TursoExample />
 
       <SummaryCards impactMetrics={impactMetrics} />
 
@@ -101,9 +98,10 @@ function App() {
         onDeadToggle={setShowDeadOnly}
       />
 
-      <RiskTable deadStock={filteredDeadStock} />
-
-      <DemandStores skuId={selectedSku} demandStores={demandStores} />
+      <RiskTable
+        inventory={displayedInventory}
+        deadStock={deadStock}
+      />
 
       <TransferRecommendations transfers={transfers} />
     </div>
