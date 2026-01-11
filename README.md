@@ -23,3 +23,4 @@ A React-based decision dashboard that:
 
 ## Intended Users
 Inventory planners and merchandising teams in fashion retail.
+ 

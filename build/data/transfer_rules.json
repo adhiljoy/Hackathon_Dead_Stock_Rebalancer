@@ -1,0 +1,15 @@
+{
+  "dead_stock_rules": {
+    "ros_threshold": 0,
+    "min_days_unsold": 30,
+    "min_stock_quantity": 15
+  },
+  "demand_store_rules": {
+    "min_ros": 2,
+    "max_stock_age_days": 30
+  },
+  "transfer_constraints": {
+    "max_transfer_percentage": 40,
+    "min_remaining_stock": 5
+  }
+}
