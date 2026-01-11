@@ -1,3 +1,4 @@
+import Legend from "./components/Legend";
 import { supabase } from "./utils/supabase";
 import { calculateImpactMetrics } from "./utils/impactMetrics";
 import DataUpload from "./components/DataUpload";
@@ -97,6 +98,8 @@ function App() {
         onSkuChange={setSelectedSkuFilter}
         onDeadToggle={setShowDeadOnly}
       />
+      <Legend />
+
 
       <RiskTable
         inventory={displayedInventory}
