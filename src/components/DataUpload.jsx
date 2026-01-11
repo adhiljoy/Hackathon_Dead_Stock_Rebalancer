@@ -1,60 +1,48 @@
-import React, { useState } from "react";
+import React from "react";
+import Papa from "papaparse";
+import { supabase } from "../utils/supabase";
 
-function DataUpload() {
-  const [fileName, setFileName] = useState("");
-  const [recordCount, setRecordCount] = useState(null);
-  const [error, setError] = useState("");
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
+function DataUpload({ onUploadSuccess }) {
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
     if (!file) return;
 
-    setFileName(file.name);
-    setError("");
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const rows = results.data.map(row => ({
+          store_id: row.store_id,
+          sku_id: row.sku_id,
+          category: row.category,
+          current_stock: Number(row.current_stock),
+          stock_age_days: Number(row.stock_age_days),
+          daily_sales: Number(row.daily_sales || 0)
+        }));
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        if (file.name.endsWith(".json")) {
-          const data = JSON.parse(event.target.result);
-          setRecordCount(Array.isArray(data) ? data.length : 1);
-        } else if (file.name.endsWith(".csv")) {
-          const lines = event.target.result.split("\n");
-          setRecordCount(lines.length - 1);
+        const { error } = await supabase
+          .from("inventory")
+          .insert(rows);
+
+        if (error) {
+          console.error("Upload failed:", error);
+          alert("Upload failed. Check console for details.");
         } else {
-          setError("Unsupported file format. Upload CSV or JSON.");
+          alert("Inventory uploaded successfully!");
+          if (onUploadSuccess) onUploadSuccess();
         }
-      } catch (err) {
-        setError("Failed to parse file.");
       }
-    };
-
-    reader.readAsText(file);
+    });
   };
 
   return (
     <div className="card">
-      <h3>📥 ERP Data Import</h3>
-
-      <input type="file" accept=".csv,.json" onChange={handleFileUpload} />
-
-      {fileName && (
-        <p>
-          <strong>File:</strong> {fileName}
-        </p>
-      )}
-
-      {recordCount !== null && (
-        <p>
-          <strong>Records detected:</strong> {recordCount}
-        </p>
-      )}
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      <p style={{ fontSize: "12px", color: "#777" }}>
-        Supports ERP exports in CSV or JSON format.
-      </p>
+      <h3>📤 Upload Inventory (ERP / CSV)</h3>
+      <input
+        type="file"
+        accept=".csv"
+        onChange={handleFileUpload}
+      />
     </div>
   );
 }

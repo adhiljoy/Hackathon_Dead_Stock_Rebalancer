@@ -1,56 +1,59 @@
-import Legend from "./components/Legend";
+import React, { useEffect, useState, useCallback } from "react";
 import { supabase } from "./utils/supabase";
 import { calculateImpactMetrics } from "./utils/impactMetrics";
+
 import DataUpload from "./components/DataUpload";
-import React, { useEffect, useState } from "react";
+import SummaryCards from "./components/SummaryCards";
+import RiskTable from "./components/RiskTable";
+import TransferRecommendations from "./components/TransferRecommendations";
+import Filters from "./components/Filters";
 
 import {
   identifyDeadStock,
   recommendTransfers
 } from "./utils/inventoryLogic";
 
-import SummaryCards from "./components/SummaryCards";
-import RiskTable from "./components/RiskTable";
-import DemandStores from "./components/DemandStores";
-import TransferRecommendations from "./components/TransferRecommendations";
-import Filters from "./components/Filters";
-
 function App() {
-  const [salesHistory, setSalesHistory] = useState([]);
   const [inventory, setInventory] = useState([]);
+  const [salesHistory, setSalesHistory] = useState([]);
   const [rules, setRules] = useState({});
 
   const [deadStock, setDeadStock] = useState([]);
   const [transfers, setTransfers] = useState([]);
   const [impactMetrics, setImpactMetrics] = useState(null);
 
-  // Filters state
   const [selectedStore, setSelectedStore] = useState("");
   const [selectedSkuFilter, setSelectedSkuFilter] = useState("");
   const [showDeadOnly, setShowDeadOnly] = useState(true);
 
-  // 🔹 LOAD DATA
-  useEffect(() => {
-    async function loadData() {
-      const { data: inventoryData, error } = await supabase
-        .from("inventory")
-        .select("*");
+  // 🔁 CENTRAL INVENTORY FETCH FUNCTION
+  const fetchInventory = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("inventory")
+      .select("*");
 
-      if (error) {
-        console.error("Error fetching inventory:", error);
-        return;
-      }
+    if (error) {
+      console.error("Error fetching inventory:", error);
+      return;
+    }
+
+    setInventory(data);
+  }, []);
+
+  // 🔹 INITIAL LOAD
+  useEffect(() => {
+    async function loadInitialData() {
+      await fetchInventory();
 
       const sales = await fetch("/data/sales_history.json").then(r => r.json());
       const rls = await fetch("/data/transfer_rules.json").then(r => r.json());
 
-      setInventory(inventoryData);
       setSalesHistory(sales);
       setRules(rls);
     }
 
-    loadData();
-  }, []);
+    loadInitialData();
+  }, [fetchInventory]);
 
   // 🔹 COMPUTE DEAD STOCK & IMPACT
   useEffect(() => {
@@ -66,7 +69,7 @@ function App() {
     }
   }, [inventory, salesHistory, rules]);
 
-  // 🔹 APPLY FILTERS
+  // 🔹 APPLY FILTER (ALL vs DEAD ONLY)
   const displayedInventory = showDeadOnly
     ? inventory.filter(item =>
         deadStock.some(
@@ -86,7 +89,8 @@ function App() {
 
       <SummaryCards impactMetrics={impactMetrics} />
 
-      <DataUpload />
+      {/* 🔹 DataUpload now triggers inventory refresh */}
+      <DataUpload onUploadSuccess={fetchInventory} />
 
       <Filters
         stores={stores}
@@ -98,8 +102,6 @@ function App() {
         onSkuChange={setSelectedSkuFilter}
         onDeadToggle={setShowDeadOnly}
       />
-      <Legend />
-
 
       <RiskTable
         inventory={displayedInventory}
